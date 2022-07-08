@@ -47,37 +47,73 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
-  Future download(String url) async {
+  Future processDownload(String url) async {
     var status = await Permission.storage.request();
     if (status.isGranted) {
       var baseStorage = await getExternalStorageDirectory();
 
       /// buat folder
-      final directoryName = "audios";
+      const directoryName = "audios";
       // final docDir = await getApplicationDocumentsDirectory();
-      final myDir = Directory("${baseStorage!.path}/$directoryName");
+      final myDir = Directory("${baseStorage!.path}/$directoryName/");
       Directory? dir;
 
       if (await myDir.exists()) {
         print(">>> Folder sudah ada !");
         dir = myDir;
+        print(">>> dir : $dir");
+        download(url, dir.path);
       } else {
         dir = await myDir.create(recursive: true);
+        download(url, dir.path);
         print(">>> dir : $dir");
       }
 
       // baseStorage = "${baseStorage!.path}/audios/" as Directory?;
       // print(">>> basesotrage : ${baseStorage} ");
 
-      await FlutterDownloader.enqueue(
-        url: url,
-        savedDir: dir.path, //baseStorage!.path,
-        showNotification:
-            true, // show download progress in status bar (for Android)
-        openFileFromNotification:
-            true, // click on notification to open downloaded file (for Android)
-        saveInPublicStorage: true,
-      );
+    }
+  }
+
+  Future<void> download(String url, String dir) async {
+    await FlutterDownloader.enqueue(
+      url: url,
+      requiresStorageNotLow: true,
+      savedDir: dir, //baseStorage!.path,
+      showNotification:
+          true, // show download progress in status bar (for Android)
+      openFileFromNotification:
+          true, // click on notification to open downloaded file (for Android)
+      saveInPublicStorage: false,
+    );
+  }
+
+  Future<void> ReadFile(String nameFile) async {
+    try {
+      // final directory = await getApplicationDocumentsDirectory();
+      // final file = File('${directory.path}/$nameFile.mp3');
+      // print(file);
+      // var text = await file.readAsString();
+      // print(">>>> baca text : $text");
+      var baseStorage = await getExternalStorageDirectory();
+      const directoryName = "audios";
+      final myDir = Directory("${baseStorage!.path}/$directoryName/");
+      print(">>> mydir : ${myDir.path}");
+      var fullStringPath = "${myDir.path}$nameFile.mp3";
+      print("fullString : $fullStringPath");
+
+      var result = await File(fullStringPath).exists();
+
+      // var result = await File(
+      //         "/storage/emulated/0/Android/data/com.example.flutter_dwnloader/files/audios/" +
+      //             nameFile +
+      //             ".mp3")
+      //     .exists();
+
+      print(">>> Apakah file audio ada ? $result");
+    } catch (e) {
+      print('exception');
+      print(e.toString());
     }
   }
 
@@ -118,19 +154,6 @@ class _MyHomePageState extends State<MyHomePage> {
     send?.send([id, status, progress]);
   }
 
-  Future<void> ReadFile(String nameFile) async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/$nameFile.mp3');
-      print(file);
-      var text = await file.readAsString();
-      print(">>>> baca text : $text");
-    } catch (e) {
-      print('exception');
-      print(e.toString());
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -149,12 +172,12 @@ class _MyHomePageState extends State<MyHomePage> {
               style: Theme.of(context).textTheme.headline4,
             ),
             ElevatedButton(
-                onPressed: () => ReadFile("2"), child: Text("ReadFile Dwn"))
+                onPressed: () => ReadFile("1"), child: Text("ReadFile Dwn"))
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => download(
+        onPressed: () => processDownload(
             "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3"),
         tooltip: 'download',
         child: const Icon(Icons.add),
